@@ -1,0 +1,51 @@
+name: CodeChecks
+
+on: [push]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y mongodb-org
+        python -m pip install --upgrade pip
+        # core packages needed for testing
+        pip install pylint pytest pytest-cov
+        # extra requirements for this project
+        pip install -r requirements.txt
+
+    - name: Analysing the code with pylint
+      if: always()
+      run: |
+        pylint `ls -R|grep .py$|xargs`
+
+    - name: Start MongoDB
+      if: always()
+      run: |
+        # create mongo_files dir if it's not there
+        [ -d "mongo_files" ] || mkdir mongo_files
+        mongod --fork -f mongo_config_dev.yml
+
+    - name: Run tests
+      if: always()
+      run: |
+        pytest ./
+
+    - name: Run test coverage
+      if: always()
+      run: |
+        pytest --cov --cov-fail-under=100 ./
+
