@@ -12,14 +12,15 @@ import main
 import socialnetwork_db as sn
 
 # Build logger
+logging.basicConfig()
 FILE_FORMAT = "%(asctime)s %(filename)s:%(lineno)-4d %(levelname)s %(message)s"
 formatter = logging.Formatter(FILE_FORMAT)
 LOG_FILE = f'log_{datetime.today():%d-%m-%Y}.log'
 file_handler = logging .FileHandler(LOG_FILE)
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 # Add launch statement
 logger.info(f'Session launched at {datetime.today():%H:%M:%S}.')

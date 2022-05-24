@@ -17,6 +17,9 @@ class UserStatusCollection():
         self.mongo = mongo
         db = self.mongo.connection.media
         self.database = db['StatusUpdates']
+        self.database.create_index('status_id', unique=True)
+        self.database.create_index('user_id')
+        self.database.create_index('status_text')
 
 
     def add_status(self, status_id, user_id, status_text):

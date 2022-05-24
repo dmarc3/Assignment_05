@@ -17,6 +17,10 @@ class UserCollection():
         self.mongo = mongo
         db = self.mongo.connection.media
         self.database = db['UserAccounts']
+        self.database.create_index('user_id', unique=True)
+        self.database.create_index('user_email')
+        self.database.create_index('user_name')
+        self.database.create_index('user_lase_name')
 
     def add_user(self, user_id, email, user_name, user_last_name):
         '''

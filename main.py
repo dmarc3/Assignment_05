@@ -4,6 +4,7 @@ main driver for a simple social network project
 import csv
 import re
 import logging
+import pymongo
 import users
 import user_status
 import ipdb
@@ -240,13 +241,17 @@ def load_collection(filename, keys, collection):
                     new_row[keys[key]['key']] = new_row.pop(key)
                 # Append data
                 data.append(new_row)
-            ipdb.set_trace()
+            # Add data to database
             try:
                 with collection.mongo:
                     collection.database.insert_many(data)
-            except:
-                ipdb.set_trace()
-            
+                    logging.info('Inserting many records from %s into database at %s.',
+                                 filename,
+                                 str(collection.mongo.host)+':'+str(collection.mongo.port))
+            except pymongo.errors.BulkWriteError as exc:
+                logging.error('pymongo BulkWriteError encountered.')
+                logging.error(exc.details['writeErrors'][0]['errmsg'])
+                return False
         return True
     except FileNotFoundError:
         return False
