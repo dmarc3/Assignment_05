@@ -207,10 +207,7 @@ def search_status(status_id, status_collection):
     UserStatus instance.
     - Otherwise, it returns None.
     '''
-    result = status_collection.search_status(status_id)
-    if result.status_id:
-        return result
-    return None
+    return status_collection.search_status(status_id)
 
 # New functions
 
@@ -245,7 +242,9 @@ def load_collection(filename, keys, collection):
             try:
                 with collection.mongo:
                     collection.database.insert_many(data)
-                    logging.info('Inserting many records from %s into database at %s.',
+                    logging.info("Inserting %i %s from %s into database at %s.",
+                                 len(data),
+                                 collection.name,
                                  filename,
                                  str(collection.mongo.host)+':'+str(collection.mongo.port))
             except pymongo.errors.BulkWriteError as exc:

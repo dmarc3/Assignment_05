@@ -14,9 +14,10 @@ class UserCollection():
 
     def __init__(self, mongo):
         logging.info('UserCollection initialized.')
+        self.name = 'UserAccounts'
         self.mongo = mongo
         db = self.mongo.connection.media
-        self.database = db['UserAccounts']
+        self.database = db[self.name]
         self.database.create_index('user_id', unique=True)
         self.database.create_index('user_email')
         self.database.create_index('user_name')

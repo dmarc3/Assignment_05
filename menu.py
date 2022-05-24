@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 import main
 import socialnetwork_db as sn
+import ipdb
 
 # Build logger
 logging.basicConfig()
@@ -115,10 +116,12 @@ def add_status():
     user_id = input('User ID: ')
     status_id = input('Status ID: ')
     status_text = input('Status text: ')
-    if not main.add_status(user_id, status_id, status_text, status_collection):
-        print("An error occurred while trying to add new status")
+    if user_collection.database.find_one(dict(user_id=user_id)):
+        main.add_status(user_id, status_id, status_text, status_collection)
     else:
-        print("New status was successfully added")
+        logging.error('Unable to add %s because user %s does not exist.',
+                      status_id,
+                      user_id)
 
 
 def update_status():
@@ -128,10 +131,7 @@ def update_status():
     user_id = input('User ID: ')
     status_id = input('Status ID: ')
     status_text = input('Status text: ')
-    if not main.update_status(status_id, user_id, status_text, status_collection):
-        print("An error occurred while trying to update status")
-    else:
-        print("Status was successfully updated")
+    main.update_status(status_id, user_id, status_text, status_collection)
 
 
 def search_status():
@@ -140,12 +140,10 @@ def search_status():
     '''
     status_id = input('Enter status ID to search: ')
     result = main.search_status(status_id, status_collection)
-    if not result:
-        print("ERROR: Status does not exist")
-    else:
-        print(f"User ID: {result.user_id}")
-        print(f"Status ID: {result.status_id}")
-        print(f"Status text: {result.status_text}")
+    if result:
+        logging.info("User ID: %s", result['user_id'])
+        logging.info("Status ID: %s", result['status_id'])
+        logging.info("Status text: %s", result['status_text'])
 
 
 def delete_status():
@@ -153,10 +151,7 @@ def delete_status():
     Deletes status from the database
     '''
     status_id = input('Status ID: ')
-    if not main.delete_status(status_id, status_collection):
-        print("An error occurred while trying to delete status")
-    else:
-        print("Status was successfully deleted")
+    main.delete_status(status_id, status_collection)
 
 
 def save_status():
