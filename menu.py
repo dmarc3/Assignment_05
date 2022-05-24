@@ -9,6 +9,7 @@ import sys
 import logging
 from datetime import datetime
 import main
+import socialnetwork_db as sn
 
 # Build logger
 FILE_FORMAT = "%(asctime)s %(filename)s:%(lineno)-4d %(levelname)s %(message)s"
@@ -174,45 +175,46 @@ def quit_program():
 
 
 if __name__ == '__main__':
-    user_collection = main.init_user_collection()
-    status_collection = main.init_status_collection()
-    menu_options = {
-        'A': load_users,
-        'B': load_status_updates,
-        'C': add_user,
-        'D': update_user,
-        'E': search_user,
-        'F': delete_user,
-        'G': save_users,
-        'H': add_status,
-        'I': update_status,
-        'J': search_status,
-        'K': delete_status,
-        'L': save_status,
-        'Q': quit_program
-    }
-    while True:
-        user_selection = input("""
-                            A: Load user database
-                            B: Load status database
-                            C: Add user
-                            D: Update user
-                            E: Search user
-                            F: Delete user
-                            G: Save user database to file
-                            H: Add status
-                            I: Update status
-                            J: Search status
-                            K: Delete status
-                            L: Save status database to file
-                            Q: Quit
+    with sn.MongoDBConnection() as mongo:
+        user_collection = main.init_user_collection(mongo)
+        status_collection = main.init_status_collection(mongo)
+        menu_options = {
+            'A': load_users,
+            'B': load_status_updates,
+            'C': add_user,
+            'D': update_user,
+            'E': search_user,
+            'F': delete_user,
+            'G': save_users,
+            'H': add_status,
+            'I': update_status,
+            'J': search_status,
+            'K': delete_status,
+            'L': save_status,
+            'Q': quit_program
+        }
+        while True:
+            user_selection = input("""
+                                A: Load user database
+                                B: Load status database
+                                C: Add user
+                                D: Update user
+                                E: Search user
+                                F: Delete user
+                                G: Save user database to file
+                                H: Add status
+                                I: Update status
+                                J: Search status
+                                K: Delete status
+                                L: Save status database to file
+                                Q: Quit
 
-                            Please enter your choice: """)
-        user_selection = user_selection.upper().strip()
-        if user_selection in menu_options:
-            logging.info(f'User selected {user_selection} ' \
-                         f'-> executing {menu_options[user_selection].__name__}.')
-            menu_options[user_selection]()
-        else:
-            logging.info(f'{user_selection} is an invalid option.')
-            print("Invalid option")
+                                Please enter your choice: """)
+            user_selection = user_selection.upper().strip()
+            if user_selection in menu_options:
+                logging.info(f'User selected {user_selection} ' \
+                            f'-> executing {menu_options[user_selection].__name__}.')
+                menu_options[user_selection]()
+            else:
+                logging.info(f'{user_selection} is an invalid option.')
+                print("Invalid option")

@@ -3,21 +3,24 @@ main driver for a simple social network project
 '''
 import csv
 import re
+import logging
 import users
 import user_status
+import ipdb
 
-def init_user_collection():
+
+def init_user_collection(mongo):
     '''
     Creates and returns a new instance of UserCollection
     '''
-    return users.UserCollection()
+    return users.UserCollection(mongo)
 
 
-def init_status_collection():
+def init_status_collection(mongo):
     '''
     Creates and returns a new instance of UserStatusCollection
     '''
-    return user_status.UserStatusCollection()
+    return user_status.UserStatusCollection(mongo)
 
 
 def load_users(filename, user_collection):
@@ -35,11 +38,11 @@ def load_users(filename, user_collection):
     - Otherwise, it returns True.
     '''
     # Loop through each row in csv file
-    keys = {'USER_ID': validate_user_id,
-            'EMAIL': validate_email,
-            'NAME': validate_name,
-            'LASTNAME': validate_name}
-    return load_collection(filename, keys, user_collection, 'add_user')
+    keys = {'USER_ID':  {'validate': validate_user_id,  'key': 'user_id'},
+            'EMAIL':    {'validate': validate_email,    'key': 'user_email'},
+            'NAME':     {'validate': validate_name,     'key': 'user_name'},
+            'LASTNAME': {'validate': validate_name,     'key': 'user_last_name'}}
+    return load_collection(filename, keys, user_collection)
 
 
 def save_users(filename, user_collection):
@@ -72,11 +75,13 @@ def load_status_updates(filename, status_collection):
     - Returns False if there are any errors(such as empty fields in the
       source CSV file)
     - Otherwise, it returns True.
+
+    Author: Marcus Bakke
     '''
-    keys = {'STATUS_ID': validate_status_id,
-            'USER_ID': validate_user_id,
-            'STATUS_TEXT': validate_status_text}
-    return load_collection(filename, keys, status_collection, 'add_status')
+    keys = {'STATUS_ID':   {'validate': validate_status_id,   'key': 'status_id'},
+            'USER_ID':     {'validate': validate_user_id,     'key': 'user_id'},
+            'STATUS_TEXT': {'validate': validate_status_text, 'key': 'status_text'}}
+    return load_collection(filename, keys, status_collection)
 
 
 def save_status_updates(filename, status_collection):
@@ -208,7 +213,7 @@ def search_status(status_id, status_collection):
 
 # New functions
 
-def load_collection(filename, keys, collection, func):
+def load_collection(filename, keys, collection):
     '''
     Method which loads status or user collection from CSV file
     '''
@@ -216,27 +221,32 @@ def load_collection(filename, keys, collection, func):
     try:
         with open(filename, 'r', encoding="utf-8") as file:
             reader = csv.DictReader(file)
+            data = []
             for row in reader:
+                new_row = row.copy()
                 # Check for errors in current row
                 for key, value in row.items():
                     if value.replace(' ', '') == '':
                         print(f'Empty value found for {key} on ' \
-                              f'line {reader.line_num} of {filename}.')
+                            f'line {reader.line_num} of {filename}.')
                         return False
                     # Validate input
                     try:
-                        if not keys[key](value):
+                        if not keys[key]['validate'](value):
                             return False
                     except KeyError:
                         return False
-
-                # Add user if USER_ID/STATUS_ID not found in collection
-                try:
-                    data = [row[key] for key in keys]
-                    getattr(collection, func)(*data)
-                except KeyError:
-                    return False
-
+                    # Replace keys
+                    new_row[keys[key]['key']] = new_row.pop(key)
+                # Append data
+                data.append(new_row)
+            ipdb.set_trace()
+            try:
+                with collection.mongo:
+                    collection.database.insert_many(data)
+            except:
+                ipdb.set_trace()
+            
         return True
     except FileNotFoundError:
         return False
@@ -273,6 +283,7 @@ def validate_user_id(user_id):
     except ValueError:
         return True
 
+
 def validate_email(email):
     '''
     Validates email
@@ -284,14 +295,18 @@ def validate_email(email):
         return False
     return True
 
+
 def validate_name(name):
     '''
     Validates user_name
     '''
     # Check if name contains only letters
+    for chars in ['-', "'"]:
+        name = name.replace(chars, '')
     if not name.isalpha():
         return False
     return True
+
 
 def validate_status_id(status_id):
     '''
@@ -312,6 +327,7 @@ def validate_status_id(status_id):
     except ValueError:
         return False
 
+
 def validate_status_text(status_text):
     '''
     Accept any text input
@@ -320,24 +336,26 @@ def validate_status_text(status_text):
         return True
     return False
 
+
 def validate_user_inputs(user_id, email, user_name, user_last_name):
     '''
     Validates all user inputs
     '''
     # Validate inputs
     if not validate_user_id(user_id):
-        print(f'Invalid USER_ID: {user_id}')
+        logging.error('Invalid user_id: %s', user_id)
         return False
     if not validate_email(email):
-        print(f'Invalid EMAIL: {email}')
+        logging.error('Invalid email: %s', email)
         return False
     if not validate_name(user_name):
-        print(f'Invalid NAME: {user_name}')
+        logging.error('Invalid user_name: %s', user_name)
         return False
     if not validate_name(user_last_name):
-        print(f'Invalid LASTNAME: {user_last_name}')
+        logging.error('Invalid user_last_name: %s', user_last_name)
         return False
     return True
+
 
 def validate_status_inputs(status_id, user_id, status_text):
     '''
@@ -345,12 +363,13 @@ def validate_status_inputs(status_id, user_id, status_text):
     '''
     # Validate inputs
     if not validate_status_id(status_id):
-        print(f'Invalid STATUS_ID: {status_id}')
+        logging.error('Invalid status_id: %s', status_id)
         return False
     if not validate_user_id(user_id):
-        print(f'Invalid USER_ID: {user_id}')
+        logging.error('Invalid user_id: %s', user_id)
         return False
     if not validate_status_text(status_text):
-        print(f'Invalid STATUS_TEXT: {status_text}')
+        logging.error('Invalid status_text: %s', status_text)
         return False
     return True
+

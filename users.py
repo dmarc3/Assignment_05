@@ -4,19 +4,7 @@ All edits made by Kathleen Wong to incorporate logging issues.
 '''
 # pylint: disable=R0903
 import logging
-
-
-class Users():
-    '''
-    Contains user information
-    '''
-
-    def __init__(self, user_id, email, user_name, user_last_name):
-        logging.info('%s status initialized.', user_id)
-        self.user_id = user_id
-        self.email = email
-        self.user_name = user_name
-        self.user_last_name = user_last_name
+import ipdb
 
 
 class UserCollection():
@@ -24,9 +12,11 @@ class UserCollection():
     Contains a collection of Users objects
     '''
 
-    def __init__(self):
+    def __init__(self, mongo):
         logging.info('UserCollection initialized.')
-        self.database = {}
+        self.mongo = mongo
+        db = self.mongo.connection.media
+        self.database = db['UserAccounts']
 
     def add_user(self, user_id, email, user_name, user_last_name):
         '''

@@ -4,17 +4,7 @@ All edits by Marcus Bakke.
 '''
 # pylint: disable=R0903
 import logging
-
-class UserStatus():
-    '''
-    class to hold status message data
-    '''
-
-    def __init__(self, status_id, user_id, status_text):
-        logging.info('%s status initialized.', status_id)
-        self.status_id = status_id
-        self.user_id = user_id
-        self.status_text = status_text
+import ipdb
 
 
 class UserStatusCollection():
@@ -22,9 +12,12 @@ class UserStatusCollection():
     Collection of UserStatus messages
     '''
 
-    def __init__(self):
+    def __init__(self, mongo):
         logging.info('UserStatusCollection initialized.')
-        self.database = {}
+        self.mongo = mongo
+        db = self.mongo.connection.media
+        self.database = db['StatusUpdates']
+
 
     def add_status(self, status_id, user_id, status_text):
         '''
