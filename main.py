@@ -7,6 +7,7 @@ import logging
 import pymongo
 import users
 import user_status
+import ipdb
 
 
 def init_user_collection(mongo, name='UserAccounts'):
@@ -173,7 +174,6 @@ def search_status(status_id, status_collection):
 
 # New functions
 
-
 def load_collection(filename, keys, collection):
     '''
     Method which loads status or user collection from CSV file
@@ -189,7 +189,7 @@ def load_collection(filename, keys, collection):
                 for key, value in row.items():
                     if value.replace(' ', '') == '':
                         print(f'Empty value found for {key} on ' \
-                              f'line {reader.line_num} of {filename}.')
+                            f'line {reader.line_num} of {filename}.')
                         return False
                     # Validate input
                     try:

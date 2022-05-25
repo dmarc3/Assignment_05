@@ -1,6 +1,5 @@
 from pymongo import MongoClient
 
-
 class MongoDBConnection():
     '''MongoDB Connection'''
 
@@ -15,7 +14,6 @@ class MongoDBConnection():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.connection.close()
-
 
 def print_mdb_collection(collection_name):
     [print(doc) for doc in collection_name.find()]

@@ -1,6 +1,7 @@
 '''
 Unittest module.
 Disable "Too many public methods" pylint message.
+Authors: Kathleen Wong and Marcus Bakke
 '''
 # pylint: disable=R0904
 import unittest
@@ -38,6 +39,7 @@ class TestMain(unittest.TestCase):
     def test_init_status_collection(self):
         '''
         Test UserStatusCollection initialization
+        Author: Marcus Bakke
         '''
         name = 'TEST_INIT_STATUS'
         user_status_collection = main.init_status_collection(self.mongo, name=name)
@@ -221,6 +223,75 @@ class TestMain(unittest.TestCase):
     #     self.assertFalse(result)
     #     self.assertTrue(mock_delete_user.called)
 
+    # def test_load_users(self):
+    #     '''
+    #     Test load_users method
+    #     Author: Kathleen Wong
+    #     '''
+    #     # Test good accounts
+    #     user_collection = main.init_user_collection()
+    #     filename = os.path.join('test_files', 'test_good_accounts.csv')
+    #     result = main.load_users(filename, user_collection)
+    #     expected = [['evmiles97', 'eve.miles@uw.edu', 'Eve', 'Miles'],
+    #                ['dave03', 'david.yuen@gmail.com', 'David', 'Yuen']]
+    #     self.assertTrue(result)
+    #     for i, user in enumerate(self.user_collection.database):
+    #         self.assertEqual(user.user_id, expected[i][0])
+    #         self.assertEqual(user.user_email, expected[i][1])
+    #         self.assertEqual(user.user_name, expected[i][2])
+    #         self.assertEqual(user.user_last_name, expected[i][3])
+    #     fail = main.load_status_updates(os.path.join('test_files',
+    #                                                    'test_bad_accounts_1.csv'),
+    #                                       self.status_collection)
+    #     self.assertFalse(fail)
+    #     fake = main.load_users(filename, user_collection)
+    #     self.assertFalse(fake)
+
+    # def test_add_user(self):
+    #     '''
+    #     Test add_user method
+    #     Author: Kathleen Wong
+    #     '''
+    #     # Test add_user function success
+    #     user_collection = main.init_user_collection()
+    #     result = main.add_user('kwong', 'kwong@gmail.com', 'Kathleen', 'Wong', user_collection)
+    #     self.assertTrue(result)
+    #     fail = main.add_user('kwong', 'kwong@gmail.com', 'Kathleen', 'Wong', user_collection)
+    #     self.assertFalse(fail)
+    #     email = main.add_user('kwong', 'kwong', 'Kathleen', 'Wong', user_collection)
+    #     self.assertFalse(email)
+    #     user_id = main.add_user('k wong', 'kwong@gmail.com', 'Kathleen', 'Wong', user_collection)
+    #     self.assertFalse(user_id)
+    #     user_name = main.add_user('name', 'kwong@gmail.com', 'kathleen123',
+    #                               'wong123', user_collection)
+    #     self.assertFalse(user_name)
+    #     user_last_name = main.add_user('name', 'kwong@gmail.com',
+    #                                    'kathleen', 'wong123', user_collection)
+    #     self.assertFalse(user_last_name)
+
+    # def test_update_user(self):
+    #     '''
+    #     Test update_user method
+    #     Author: Kathleen Wong
+    #     '''
+    #     # Test update_user function success
+    #     user_collection = main.init_user_collection()
+    #     main.add_user('dave03', 'dave@gmail.com', 'dave', 'yuen', user_collection)
+    #     result = main.update_user('dave03',
+    #                               'newemail@gmail.com',
+    #                               'Notdave',
+    #                               'Notyuen',
+    #                               user_collection)
+    #     user = user_collection.database.get(user_collection.database.user_id == 'dave03')
+    #     self.assertEqual(user.user_email, 'newemail@gmail.com')
+    #     self.assertEqual(user.user_name, 'Notdave')
+    #     self.assertEqual(user.user_last_name, 'Notyuen')
+    #     self.assertTrue(result)
+    #     fail = main.update_user('fail', 'fail@gmail.com', 'Fail', 'Test', user_collection)
+    #     self.assertFalse(fail)
+    #     email = main.update_user('dave03', 'fail',  'Fail', 'Test', user_collection)
+    #     self.assertFalse(email)
+
     # def test_delete_user(self):
     #     '''
     #     Test delete_user method
@@ -257,109 +328,142 @@ class TestMain(unittest.TestCase):
     def test_add_status(self):
         '''
         Test add_status method
+        Author: Marcus Bakke
         '''
+        # Load some user data
+        main.load_users(os.path.join('test_files',
+                                     'test_good_accounts.csv'),
+                        self.user_collection)
         # Test add_status function success
-        status_collection = main.init_status_collection()
-        result = main.add_status('mbak79',
-                                 'mbak79_00001',
-                                 'Still doing homework!',
-                                 status_collection)
+        inputs = ['evmiles97',
+                  'evmiles97_00003',
+                  'Still doing homework!',
+                  self.status_collection]
+        result = main.add_status(*inputs)
         self.assertTrue(result)
-        self.assertEqual(status_collection.database['mbak79_00001'].status_id,
-                         'mbak79_00001')
-        self.assertEqual(status_collection.database['mbak79_00001'].user_id,
-                         'mbak79')
-        self.assertEqual(status_collection.database['mbak79_00001'].status_text,
-                         'Still doing homework!')
-        # Test add_user function failure
-        result = main.add_status('mbak79',
-                                 'mbak79_00001',
-                                 'Still doing more homework!',
-                                 status_collection)
+        status = self.status_collection.database.get(
+                 self.status_collection.database.status_id == inputs[1])
+        self.assertEqual(status.user_id,
+                         inputs[0])
+        self.assertEqual(status.status_id, inputs[1])
+        self.assertEqual(status.status_text, inputs[2])
+        # Test add_status function failure
+        inputs = ['mbakke63',
+                  'mbakke63_00001',
+                  'This fails!',
+                  self.status_collection]
+        result = main.add_status(*inputs)
         self.assertFalse(result)
-        self.assertEqual(status_collection.database['mbak79_00001'].status_id,
-                         'mbak79_00001')
-        self.assertEqual(status_collection.database['mbak79_00001'].user_id,
-                         'mbak79')
-        self.assertEqual(status_collection.database['mbak79_00001'].status_text,
-                         'Still doing homework!')
-        result = main.add_status('mbake152',
-                                 'mbake152_asdfaa',
-                                 'Still doing more homework!',
-                                 status_collection)
+        # Test invalid inputs
+        inputs = ['mba_kke63_00001',
+                  'mbakke63',
+                  'This fails!',
+                  self.status_collection]
+        result = main.add_status(*inputs)
         self.assertFalse(result)
+        fail = main.add_status('fake', 'faketest', 'fake', self.status_collection)
+        self.assertFalse(fail)
 
     def test_update_status(self):
         '''
         Test update_status method
+        Author: Marcus Bakke
         '''
+        # Load some user data
+        main.load_users(os.path.join('test_files',
+                                     'test_good_accounts.csv'),
+                        self.user_collection)
+        # Load some status data
+        main.load_status_updates(os.path.join('test_files',
+                                              'test_good_status_updates.csv'),
+                                 self.status_collection)
         # Test update_status function success
-        status_collection = main.init_status_collection()
-        filename = os.path.join('test_files', 'test_good_status_updates.csv')
-        main.load_status_updates(filename, status_collection)
-        result = main.update_status('dave03_00001',
-                                    'dave04',
-                                    'Dave has a new status!',
-                                    status_collection)
-        self.assertEqual(status_collection.database['dave03_00001'].user_id,
-                         'dave04')
-        self.assertEqual(status_collection.database['dave03_00001'].status_text,
-                         'Dave has a new status!')
+        inputs = ['evmiles97_00001',
+                  'evmiles97',
+                  'Still doing homework!',
+                  self.status_collection]
+        result = main.update_status(*inputs)
         self.assertTrue(result)
-        # Test update_status function failure
-        result = main.update_status('test123_00001',
-                                    'test123',
-                                    'Twitter is dumb',
-                                    status_collection)
+        status = self.status_collection.database.get(
+                 self.status_collection.database.status_id == inputs[0])
+        self.assertEqual(status.status_id, inputs[0])
+        self.assertEqual(status.user_id, inputs[1])
+        self.assertEqual(status.status_text, inputs[2])
+        # Test add_status function failure
+        inputs = ['mbakke63_00001',
+                  'mbakke63',
+                  'This fails!',
+                  self.status_collection]
+        result = main.update_status(*inputs)
         self.assertFalse(result)
-        result = main.update_status('test123_kljlkasdf',
-                                    'test123',
-                                    'Twitter is dumb',
-                                    status_collection)
+        # Test invalid inputs
+        inputs = ['mba_kke63_00001',
+                  'mbakke63',
+                  'This fails!',
+                  self.status_collection]
+        result = main.update_status(*inputs)
         self.assertFalse(result)
-        result = main.update_status('test123_00001',
-                                    'test 123',
-                                    'Twitter is dumb',
-                                    status_collection)
-        self.assertFalse(result)
-        result = main.update_status('test123_00001',
-                                    'test123',
-                                    1231,
-                                    status_collection)
-        self.assertFalse(result)
+        bad_results = main.load_status_updates(os.path.join('test_files',
+                                              'test_bad_status_updates.csv'),
+                                 self.status_collection)
+        self.assertFalse(bad_results)
+        bad_format_results = main.load_status_updates(os.path.join('test_files',
+                                              'test_bad_status_updates_2.csv'),
+                                 self.status_collection)
+        self.assertFalse(bad_format_results)
+        fake = main.load_status_updates(os.path.join('test_files',
+                                              'fake.csv'),
+                                 self.status_collection)
+        self.assertFalse(fake)
 
     def test_delete_status(self):
         '''
         Test delete_status method
+        Author: Marcus Bakke
         '''
+        # Load some user data
+        main.load_users(os.path.join('test_files',
+                                     'test_good_accounts.csv'),
+                        self.user_collection)
+        # Load some status data
+        main.load_status_updates(os.path.join('test_files',
+                                              'test_good_status_updates.csv'),
+                                 self.status_collection)
         # Test delete_status function success
-        status_collection = main.init_status_collection()
-        filename = os.path.join('test_files', 'test_good_status_updates.csv')
-        main.load_status_updates(filename, status_collection)
-        result = main.delete_status('dave03_00001', status_collection)
+        inputs = ['evmiles97_00001', self.status_collection]
+        result = main.delete_status(*inputs)
         self.assertTrue(result)
-        self.assertTrue('dave03_00001' not in status_collection.database)
-        # Test delete_status function failure
-        result = main.delete_status('test123', status_collection)
+        status = self.status_collection.database.get_or_none(
+                 self.status_collection.database.status_id == inputs[0])
+        self.assertIsNone(status)
+        # Test add_status function failure
+        inputs = ['mbakke63_00001', self.status_collection]
+        result = main.delete_status(*inputs)
         self.assertFalse(result)
 
     def test_search_status(self):
         '''
         Test search_status method
+        Author: Marcus Bakke
         '''
+        # Load some user data
+        main.load_users(os.path.join('test_files',
+                                     'test_good_accounts.csv'),
+                        self.user_collection)
+        # Load some status data
+        main.load_status_updates(os.path.join('test_files',
+                                              'test_good_status_updates.csv'),
+                                 self.status_collection)
         # Test search_status function success
-        status_collection = main.init_status_collection()
-        filename = os.path.join('test_files', 'test_good_status_updates.csv')
-        main.load_status_updates(filename, status_collection)
-        result = main.search_status('dave03_00001', status_collection)
-        self.assertIsNotNone(result)
-        expected = user_status.UserStatus('dave03_00001', 'dave03', 'Sunny in Seattle this morning')
-        keys = ['status_id', 'user_id', 'status_text']
-        for attr in keys:
-            self.assertEqual(getattr(result, attr), getattr(expected, attr))
-        # Test search_user function failure
-        result = main.search_status('test123_00001', status_collection)
-        self.assertFalse(result)
+        inputs = ['evmiles97_00001', self.status_collection]
+        status = main.search_status(*inputs)
+        self.assertEqual(status.status_id, 'evmiles97_00001')
+        self.assertEqual(status.user_id, 'evmiles97')
+        self.assertEqual(status.status_text, 'Code is finally compiling')
+        # Test search_status function failure
+        inputs = ['mbakke63_00001', self.status_collection]
+        result = main.search_status(*inputs)
+        self.assertIsNone(result)
 
     def test_validate_user_id(self):
         '''
@@ -394,38 +498,34 @@ class TestMain(unittest.TestCase):
         for name in ['this has a space', '123141', 'Marcus-3000']:
             self.assertFalse(main.validate_name(name))
 
-    def test_validate_status_id(self):
+    def test_validate_status_inputs(self):
         '''
-        Test validate_status_id method
+        Test validate_status_inputs method
+        Author: Marcus Bakke
         '''
-        # Tests valid status_id
-        for status_id in ['dave03_00001',
-                   'evmiles97_00003',
-                   'mbakke63_09813',
-                   'andy14_87123']:
-            self.assertTrue(main.validate_status_id(status_id))
-        # Test invalid status_id
-        for status_id in ['asdf_1231_1231',
-                   'asdf1239874',
-                   'dave03_hello',
-                   'mbakke53_12.124',
-                   'asdf 123_12345']:
-            self.assertFalse(main.validate_status_id(status_id))
-
-    def test_validate_status_text(self):
-        '''
-        Test validate_status_text method
-        '''
-        # Tests valid status_text
-        for text in ['some text']:
-            self.assertTrue(main.validate_status_text(text))
-        # Test invalid status_text
-        for text in [1234, 12314.0, {'dict': 'hello'}, (1, 2), [1, 2, 3]]:
-            self.assertFalse(main.validate_status_text(text))
+        # Test valid inputs
+        inputs = [['dave03_00001', 'dave03', 'test1'],
+                  ['evmiles97_00003', 'evmiles97', 'test2'],
+                  ['mbakke63_09813', 'mbakke63', 'test3'],
+                  ['andy14_87123', 'andy14', 'test4']]
+        for inp in inputs:
+            self.assertTrue(main.validate_status_inputs(*inp))
+        # Test invalid inputs
+        inputs = [['asdf_1231_1231', 'asdf_1231', 'test1'],
+                  ['asdf1239874', 'asdf1239874', 'test2'],
+                  ['dave03_hello', 'dave03', 'test3'],
+                  ['mbakke53_12.124', 'mbakke53_12', 'test4'],
+                  ['asdf 123_12345', 'asdf 123', 'test5'],
+                  ['asdf123_12345', 'asdf 123', 'test5'],
+                  ['asdf123_12345', 'asdf123', 1],
+                  ['asdf123_12345', 'asdf123', (1, 1)],
+                  ['asdf123_12345', 'asdf123', {}]]
+        for inp in inputs:
+            self.assertFalse(main.validate_status_inputs(*inp))
 
     def tearDown(self):
         '''
-        Tear Down function to delete saved files
+        Remove all tables at end of each test and close db.
         '''
         logging.disable(logging.NOTSET)
         self.mongo.media.drop_collection('TestUserAccounts')

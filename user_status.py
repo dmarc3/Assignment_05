@@ -6,7 +6,6 @@ All edits by Marcus Bakke.
 import logging
 import pymongo
 
-
 class UserStatusCollection:
     '''
     Collection of UserStatus messages
