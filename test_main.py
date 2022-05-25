@@ -7,26 +7,15 @@ Authors: Kathleen Wong and Marcus Bakke
 import unittest
 import os
 import logging
-from mock import patch
-import pymongo
 import users
 import user_status
 import socialnetwork_db as sn
 import main
-import ipdb
 
 class TestMain(unittest.TestCase):
     '''
     Test class for main.py
     '''
-    # def setUp(self):
-    #     '''
-    #     setUp method to disable logging.
-    #     '''
-    #     logging.disable(logging.CRITICAL)
-    #     self.mongo = pymongo.MongoClient('127.0.0.1', 27017)
-    #     self.user_collection = main.init_user_collection(self.mongo, 'TestUserAccounts')
-    #     self.status_collection = main.init_status_collection(self.mongo, 'TestStatusUpdates')
 
     def test_init_user_collection(self):
         '''
@@ -48,7 +37,6 @@ class TestMain(unittest.TestCase):
             self.assertEqual(user_status_collection.database.name, 'TestStatusUpdates')
             doc_count = len(list(user_status_collection.database.find()))
             self.assertEqual(doc_count, 0)
-
 
     def test_load_users(self):
         '''
@@ -180,140 +168,150 @@ class TestMain(unittest.TestCase):
         Test add_status method
         Author: Marcus Bakke
         '''
-        # Load some user data
-        main.load_users(os.path.join('test_files',
-                                     'test_good_accounts.csv'),
-                        self.user_collection)
+        with sn.MongoDBConnection() as mongo:
+            user_collection = main.init_status_collection(mongo, 'TestUserAccounts')
+            status_collection = main.init_status_collection(mongo, 'TestStatusUpdates')
+            # Load some user data
+            main.load_users(os.path.join('test_files',
+                                        'test_good_accounts.csv'),
+                            user_collection)
         # Test add_status function success
-        inputs = ['evmiles97',
-                  'evmiles97_00003',
-                  'Still doing homework!',
-                  self.status_collection]
-        result = main.add_status(*inputs)
-        self.assertTrue(result)
-        status = self.status_collection.database.get(
-                 self.status_collection.database.status_id == inputs[1])
-        self.assertEqual(status.user_id,
-                         inputs[0])
-        self.assertEqual(status.status_id, inputs[1])
-        self.assertEqual(status.status_text, inputs[2])
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['evmiles97',
+                     'evmiles97_00003',
+                     'Still doing homework!',
+                     status_collection]
+            result = main.add_status(*inputs)
+            self.assertTrue(result.acknowledged)
+            for status in status_collection.database.find():
+                self.assertEqual(status['status_id'], 'evmiles97_00003')
+                self.assertEqual(status['user_id'], 'evmiles97')
+                self.assertEqual(status['status_text'], 'Still doing homework!')
         # Test add_status function failure
-        inputs = ['mbakke63',
-                  'mbakke63_00001',
-                  'This fails!',
-                  self.status_collection]
-        result = main.add_status(*inputs)
-        self.assertFalse(result)
-        # Test invalid inputs
-        inputs = ['mba_kke63_00001',
-                  'mbakke63',
-                  'This fails!',
-                  self.status_collection]
-        result = main.add_status(*inputs)
-        self.assertFalse(result)
-        fail = main.add_status('fake', 'faketest', 'fake', self.status_collection)
-        self.assertFalse(fail)
+        with sn.MongoDBConnection() as mongo:
+            # Test invalid inputs
+            inputs = ['mba_kke63_00001',
+                    'mbakke63',
+                    'This fails!',
+                    status_collection]
+            result = main.add_status(*inputs)
+            self.assertFalse(result)
+            fail = main.add_status('fake', 'faketest', 'fake', status_collection)
+            self.assertFalse(fail)
 
     def test_update_status(self):
         '''
         Test update_status method
         Author: Marcus Bakke
         '''
-        # Load some user data
-        main.load_users(os.path.join('test_files',
-                                     'test_good_accounts.csv'),
-                        self.user_collection)
-        # Load some status data
-        main.load_status_updates(os.path.join('test_files',
-                                              'test_good_status_updates.csv'),
-                                 self.status_collection)
+        with sn.MongoDBConnection() as mongo:
+            user_collection = main.init_status_collection(mongo, 'TestUserAccounts')
+            status_collection = main.init_status_collection(mongo, 'TestStatusUpdates')
+            # Load some user data
+            main.load_users(os.path.join('test_files',
+                                        'test_good_accounts.csv'),
+                            user_collection)
+            # Load some status data
+            main.load_status_updates(os.path.join('test_files',
+                                                'test_good_status_updates.csv'),
+                                    status_collection)
         # Test update_status function success
-        inputs = ['evmiles97_00001',
-                  'evmiles97',
-                  'Still doing homework!',
-                  self.status_collection]
-        result = main.update_status(*inputs)
-        self.assertTrue(result)
-        status = self.status_collection.database.get(
-                 self.status_collection.database.status_id == inputs[0])
-        self.assertEqual(status.status_id, inputs[0])
-        self.assertEqual(status.user_id, inputs[1])
-        self.assertEqual(status.status_text, inputs[2])
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['evmiles97_00001',
+                    'evmiles97',
+                    'Still doing homework!',
+                    status_collection]
+            result = main.update_status(*inputs)
+            self.assertTrue(result)
+            for status in status_collection.database.find(dict(status_id='evmiles97_00001')):
+                self.assertEqual(status['status_id'], 'evmiles97_00001')
+                self.assertEqual(status['user_id'], 'evmiles97')
+                self.assertEqual(status['status_text'], 'Still doing homework!')
         # Test add_status function failure
-        inputs = ['mbakke63_00001',
-                  'mbakke63',
-                  'This fails!',
-                  self.status_collection]
-        result = main.update_status(*inputs)
-        self.assertFalse(result)
-        # Test invalid inputs
-        inputs = ['mba_kke63_00001',
-                  'mbakke63',
-                  'This fails!',
-                  self.status_collection]
-        result = main.update_status(*inputs)
-        self.assertFalse(result)
-        bad_results = main.load_status_updates(os.path.join('test_files',
-                                              'test_bad_status_updates.csv'),
-                                 self.status_collection)
-        self.assertFalse(bad_results)
-        bad_format_results = main.load_status_updates(os.path.join('test_files',
-                                              'test_bad_status_updates_2.csv'),
-                                 self.status_collection)
-        self.assertFalse(bad_format_results)
-        fake = main.load_status_updates(os.path.join('test_files',
-                                              'fake.csv'),
-                                 self.status_collection)
-        self.assertFalse(fake)
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['mbakke63_00001',
+                    'mbakke63',
+                    'This fails!',
+                    status_collection]
+            result = main.update_status(*inputs)
+            self.assertFalse(result)
+            # Test invalid inputs
+            inputs = ['mba_kke63_00001',
+                    'mbakke63',
+                    'This fails!',
+                    status_collection]
+            result = main.update_status(*inputs)
+            self.assertFalse(result)
+            bad_results = main.load_status_updates(os.path.join('test_files',
+                                                'test_bad_status_updates.csv'),
+                                    status_collection)
+            self.assertFalse(bad_results)
+            bad_format_results = main.load_status_updates(os.path.join('test_files',
+                                                'test_bad_status_updates_2.csv'),
+                                    status_collection)
+            self.assertFalse(bad_format_results)
+            fake = main.load_status_updates(os.path.join('test_files',
+                                                'fake.csv'),
+                                    status_collection)
+            self.assertFalse(fake)
 
     def test_delete_status(self):
         '''
         Test delete_status method
         Author: Marcus Bakke
         '''
-        # Load some user data
-        main.load_users(os.path.join('test_files',
-                                     'test_good_accounts.csv'),
-                        self.user_collection)
-        # Load some status data
-        main.load_status_updates(os.path.join('test_files',
-                                              'test_good_status_updates.csv'),
-                                 self.status_collection)
+        with sn.MongoDBConnection() as mongo:
+            user_collection = main.init_status_collection(mongo, 'TestUserAccounts')
+            status_collection = main.init_status_collection(mongo, 'TestStatusUpdates')
+            # Load some user data
+            main.load_users(os.path.join('test_files',
+                                        'test_good_accounts.csv'),
+                            user_collection)
+            # Load some status data
+            main.load_status_updates(os.path.join('test_files',
+                                                'test_good_status_updates.csv'),
+                                    status_collection)
         # Test delete_status function success
-        inputs = ['evmiles97_00001', self.status_collection]
-        result = main.delete_status(*inputs)
-        self.assertTrue(result)
-        status = self.status_collection.database.get_or_none(
-                 self.status_collection.database.status_id == inputs[0])
-        self.assertIsNone(status)
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['evmiles97_00001', status_collection]
+            result = main.delete_status(*inputs)
+            self.assertTrue(result)
+        self.assertEqual(len(list(status_collection.database.find(dict(status_id='evmiles97_00001')))),
+                         0)
         # Test add_status function failure
-        inputs = ['mbakke63_00001', self.status_collection]
-        result = main.delete_status(*inputs)
-        self.assertFalse(result)
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['mbakke63_00001', status_collection]
+            result = main.delete_status(*inputs)
+            self.assertFalse(result)
 
     def test_search_status(self):
         '''
         Test search_status method
         Author: Marcus Bakke
         '''
-        # Load some user data
-        main.load_users(os.path.join('test_files',
-                                     'test_good_accounts.csv'),
-                        self.user_collection)
-        # Load some status data
-        main.load_status_updates(os.path.join('test_files',
-                                              'test_good_status_updates.csv'),
-                                 self.status_collection)
+        with sn.MongoDBConnection() as mongo:
+            user_collection = main.init_status_collection(mongo, 'TestUserAccounts')
+            status_collection = main.init_status_collection(mongo, 'TestStatusUpdates')
+            # Load some user data
+            main.load_users(os.path.join('test_files',
+                                        'test_good_accounts.csv'),
+                            user_collection)
+            # Load some status data
+            main.load_status_updates(os.path.join('test_files',
+                                                'test_good_status_updates.csv'),
+                                    status_collection)
         # Test search_status function success
-        inputs = ['evmiles97_00001', self.status_collection]
-        status = main.search_status(*inputs)
-        self.assertEqual(status.status_id, 'evmiles97_00001')
-        self.assertEqual(status.user_id, 'evmiles97')
-        self.assertEqual(status.status_text, 'Code is finally compiling')
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['evmiles97_00001', status_collection]
+            status = main.search_status(*inputs)
+            self.assertEqual(status['status_id'], 'evmiles97_00001')
+            self.assertEqual(status['user_id'], 'evmiles97')
+            self.assertEqual(status['status_text'], 'Code is finally compiling')
         # Test search_status function failure
-        inputs = ['mbakke63_00001', self.status_collection]
-        result = main.search_status(*inputs)
-        self.assertIsNone(result)
+        with sn.MongoDBConnection() as mongo:
+            inputs = ['mbakke63_00001', status_collection]
+            result = main.search_status(*inputs)
+            self.assertIsNone(result)
 
     def test_validate_user_id(self):
         '''
@@ -379,8 +377,8 @@ class TestMain(unittest.TestCase):
         '''
         logging.disable(logging.NOTSET)
         with sn.MongoDBConnection() as mongo:
-            mongo.media.drop_collection('TestUserAccounts')
-            mongo.media.drop_collection('TestStatusUpdates')
+            mongo.connection.media.drop_collection('TestUserAccounts')
+            mongo.connection.media.drop_collection('TestStatusUpdates')
 
 if __name__ == '__main__':
     unittest.main()
