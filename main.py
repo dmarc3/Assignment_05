@@ -322,3 +322,4 @@ def validate_status_inputs(status_id, user_id, status_text):
         logging.error('Invalid status_text: %s', status_text)
         return False
     return True
+

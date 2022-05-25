@@ -14,9 +14,10 @@ class UserCollection:
 
     def __init__(self, mongo):
         logging.info('UserCollection initialized.')
+        self.name = 'UserAccounts'
         self.mongo = mongo
         data_base = self.mongo.connection.media
-        self.database = data_base['UserAccounts']
+        self.database = data_base[self.name]
         self.database.create_index('user_id', unique=True)
         self.database.create_index('user_email')
         self.database.create_index('user_name')
@@ -75,3 +76,4 @@ class UserCollection:
         else:
             logging.info('User %s not found.', user_id)
         return user
+

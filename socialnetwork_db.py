@@ -19,3 +19,4 @@ class MongoDBConnection():
 
 def print_mdb_collection(collection_name):
     [print(doc) for doc in collection_name.find()]
+        

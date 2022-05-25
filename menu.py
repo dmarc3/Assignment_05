@@ -158,11 +158,11 @@ if __name__ == '__main__':
             'D': update_user,
             'E': search_user,
             'F': delete_user,
-            'H': add_status,
-            'I': update_status,
-            'J': search_status,
-            'K': delete_status,
-            'Q': quit_program
+            'G': add_status,
+            'H': update_status,
+            'I': search_status,
+            'J': delete_status,
+            'K': quit_program
         }
         while True:
             user_selection = input("""
