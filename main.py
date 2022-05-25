@@ -9,11 +9,11 @@ import users
 import user_status
 
 
-def init_user_collection(mongo):
+def init_user_collection(mongo, name):
     '''
     Creates and returns a new instance of UserCollection
     '''
-    return users.UserCollection(mongo)
+    return users.UserCollection(mongo, name)
 
 
 def init_status_collection(mongo):

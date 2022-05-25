@@ -149,7 +149,7 @@ def quit_program():
 
 if __name__ == '__main__':
     with sn.MongoDBConnection() as mongo:
-        user_collection = main.init_user_collection(mongo)
+        user_collection = main.init_user_collection(mongo, 'UserAccounts')
         status_collection = main.init_status_collection(mongo)
         menu_options = {
             'A': load_users,
