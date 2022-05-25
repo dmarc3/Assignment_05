@@ -10,7 +10,6 @@ import logging
 from datetime import datetime
 import main
 import socialnetwork_db as sn
-import ipdb
 
 # Build logger
 logging.basicConfig()
@@ -92,15 +91,7 @@ def delete_user():
     Deletes user from the database
     '''
     user_id = input('User ID: ')
-    main.delete_status(user_id, user_collection)
-
-
-def save_users():
-    '''
-    Saves user database into a file
-    '''
-    filename = input('Enter filename for users file: ')
-    main.save_users(filename, user_collection)
+    main.delete_user(user_id, user_collection)
 
 
 def add_status():
@@ -148,14 +139,6 @@ def delete_status():
     main.delete_status(status_id, status_collection)
 
 
-def save_status():
-    '''
-    Saves status database into a file
-    '''
-    filename = input('Enter filename for status file: ')
-    main.save_status_updates(filename, status_collection)
-
-
 def quit_program():
     '''
     Quits program
@@ -175,12 +158,10 @@ if __name__ == '__main__':
             'D': update_user,
             'E': search_user,
             'F': delete_user,
-            'G': save_users,
             'H': add_status,
             'I': update_status,
             'J': search_status,
             'K': delete_status,
-            'L': save_status,
             'Q': quit_program
         }
         while True:
@@ -191,13 +172,11 @@ if __name__ == '__main__':
                                 D: Update user
                                 E: Search user
                                 F: Delete user
-                                G: Save user database to file
-                                H: Add status
-                                I: Update status
-                                J: Search status
-                                K: Delete status
-                                L: Save status database to file
-                                Q: Quit
+                                G: Add status
+                                H: Update status
+                                I: Search status
+                                J: Delete status
+                                K: Quit
 
                                 Please enter your choice: """)
             user_selection = user_selection.upper().strip()

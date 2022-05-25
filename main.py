@@ -7,7 +7,6 @@ import logging
 import pymongo
 import users
 import user_status
-import ipdb
 
 
 def init_user_collection(mongo):
@@ -46,25 +45,6 @@ def load_users(filename, user_collection):
     return load_collection(filename, keys, user_collection)
 
 
-def save_users(filename, user_collection):
-    '''
-    Saves all users in user_collection into
-    a CSV file
-
-    Requirements:
-    - If there is an existing file, it will
-    overwrite it.
-    - Returns False if there are any errors
-    (such as an invalid filename).
-    - Otherwise, it returns True.
-    '''
-    keys = {'user_id': 'USER_ID',
-            'email': 'EMAIL',
-            'user_name': 'NAME',
-            'user_last_name': 'LASTNAME'}
-    return save_collection(filename, keys, user_collection)
-
-
 def load_status_updates(filename, status_collection):
     '''
     Opens a CSV file with status data and adds it to an existing
@@ -83,21 +63,6 @@ def load_status_updates(filename, status_collection):
             'USER_ID':     {'validate': validate_user_id,     'key': 'user_id'},
             'STATUS_TEXT': {'validate': validate_status_text, 'key': 'status_text'}}
     return load_collection(filename, keys, status_collection)
-
-
-def save_status_updates(filename, status_collection):
-    '''
-    Saves all statuses in status_collection into a CSV file
-
-    Requirements:
-    - If there is an existing file, it will overwrite it.
-    - Returns False if there are any errors(such an invalid filename).
-    - Otherwise, it returns True.
-    '''
-    keys = {'status_id': 'STATUS_ID',
-            'user_id': 'USER_ID',
-            'status_text': 'STATUS_TEXT'}
-    return save_collection(filename, keys, status_collection)
 
 
 def add_user(user_id, email, user_name, user_last_name, user_collection):
@@ -208,6 +173,7 @@ def search_status(status_id, status_collection):
 
 # New functions
 
+
 def load_collection(filename, keys, collection):
     '''
     Method which loads status or user collection from CSV file
@@ -252,23 +218,6 @@ def load_collection(filename, keys, collection):
     except FileNotFoundError:
         return False
 
-def save_collection(filename, keys, collection):
-    '''
-    Method which writes status or user collection to CSV file
-    '''
-    # Open file in write mode
-    try:
-        with open(filename, 'w', newline='', encoding="utf-8") as file:
-            # Create csv writer object and write header
-            writer = csv.DictWriter(file, keys.values())
-            writer.writeheader()
-            # For each user/status in collection, replace keys and write to file
-            for _, value in collection.database.items():
-                new_value = {keys[k]:v for k, v in value.__dict__.items()}
-                writer.writerow(new_value)
-        return True
-    except FileNotFoundError:
-        return False
 
 def validate_user_id(user_id):
     '''
