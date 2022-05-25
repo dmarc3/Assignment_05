@@ -3,21 +3,24 @@ main driver for a simple social network project
 '''
 import csv
 import re
+import logging
+import pymongo
 import users
 import user_status
 
-def init_user_collection():
+
+def init_user_collection(mongo):
     '''
     Creates and returns a new instance of UserCollection
     '''
-    return users.UserCollection()
+    return users.UserCollection(mongo)
 
 
-def init_status_collection():
+def init_status_collection(mongo):
     '''
     Creates and returns a new instance of UserStatusCollection
     '''
-    return user_status.UserStatusCollection()
+    return user_status.UserStatusCollection(mongo)
 
 
 def load_users(filename, user_collection):
@@ -35,30 +38,11 @@ def load_users(filename, user_collection):
     - Otherwise, it returns True.
     '''
     # Loop through each row in csv file
-    keys = {'USER_ID': validate_user_id,
-            'EMAIL': validate_email,
-            'NAME': validate_name,
-            'LASTNAME': validate_name}
-    return load_collection(filename, keys, user_collection, 'add_user')
-
-
-def save_users(filename, user_collection):
-    '''
-    Saves all users in user_collection into
-    a CSV file
-
-    Requirements:
-    - If there is an existing file, it will
-    overwrite it.
-    - Returns False if there are any errors
-    (such as an invalid filename).
-    - Otherwise, it returns True.
-    '''
-    keys = {'user_id': 'USER_ID',
-            'email': 'EMAIL',
-            'user_name': 'NAME',
-            'user_last_name': 'LASTNAME'}
-    return save_collection(filename, keys, user_collection)
+    keys = {'USER_ID':  {'validate': validate_user_id,  'key': 'user_id'},
+            'EMAIL':    {'validate': validate_email,    'key': 'user_email'},
+            'NAME':     {'validate': validate_name,     'key': 'user_name'},
+            'LASTNAME': {'validate': validate_name,     'key': 'user_last_name'}}
+    return load_collection(filename, keys, user_collection)
 
 
 def load_status_updates(filename, status_collection):
@@ -72,26 +56,13 @@ def load_status_updates(filename, status_collection):
     - Returns False if there are any errors(such as empty fields in the
       source CSV file)
     - Otherwise, it returns True.
-    '''
-    keys = {'STATUS_ID': validate_status_id,
-            'USER_ID': validate_user_id,
-            'STATUS_TEXT': validate_status_text}
-    return load_collection(filename, keys, status_collection, 'add_status')
 
-
-def save_status_updates(filename, status_collection):
+    Author: Marcus Bakke
     '''
-    Saves all statuses in status_collection into a CSV file
-
-    Requirements:
-    - If there is an existing file, it will overwrite it.
-    - Returns False if there are any errors(such an invalid filename).
-    - Otherwise, it returns True.
-    '''
-    keys = {'status_id': 'STATUS_ID',
-            'user_id': 'USER_ID',
-            'status_text': 'STATUS_TEXT'}
-    return save_collection(filename, keys, status_collection)
+    keys = {'STATUS_ID':   {'validate': validate_status_id,   'key': 'status_id'},
+            'USER_ID':     {'validate': validate_user_id,     'key': 'user_id'},
+            'STATUS_TEXT': {'validate': validate_status_text, 'key': 'status_text'}}
+    return load_collection(filename, keys, status_collection)
 
 
 def add_user(user_id, email, user_name, user_last_name, user_collection):
@@ -144,10 +115,7 @@ def search_user(user_id, user_collection):
     - If the user is found, returns the corresponding User instance.
     - Otherwise, it returns None.
     '''
-    result = user_collection.search_user(user_id)
-    if result.user_id:
-        return result
-    return None
+    return user_collection.search_user(user_id)
 
 
 def add_status(user_id, status_id, status_text, status_collection):
@@ -201,14 +169,12 @@ def search_status(status_id, status_collection):
     UserStatus instance.
     - Otherwise, it returns None.
     '''
-    result = status_collection.search_status(status_id)
-    if result.status_id:
-        return result
-    return None
+    return status_collection.search_status(status_id)
 
 # New functions
 
-def load_collection(filename, keys, collection, func):
+
+def load_collection(filename, keys, collection):
     '''
     Method which loads status or user collection from CSV file
     '''
@@ -216,7 +182,9 @@ def load_collection(filename, keys, collection, func):
     try:
         with open(filename, 'r', encoding="utf-8") as file:
             reader = csv.DictReader(file)
+            data = []
             for row in reader:
+                new_row = row.copy()
                 # Check for errors in current row
                 for key, value in row.items():
                     if value.replace(' ', '') == '':
@@ -225,39 +193,31 @@ def load_collection(filename, keys, collection, func):
                         return False
                     # Validate input
                     try:
-                        if not keys[key](value):
+                        if not keys[key]['validate'](value):
                             return False
                     except KeyError:
                         return False
-
-                # Add user if USER_ID/STATUS_ID not found in collection
-                try:
-                    data = [row[key] for key in keys]
-                    getattr(collection, func)(*data)
-                except KeyError:
-                    return False
-
+                    # Replace keys
+                    new_row[keys[key]['key']] = new_row.pop(key)
+                # Append data
+                data.append(new_row)
+            # Add data to database
+            try:
+                with collection.mongo:
+                    collection.database.insert_many(data)
+                    logging.info("Inserting %i %s from %s into database at %s.",
+                                 len(data),
+                                 collection.name,
+                                 filename,
+                                 str(collection.mongo.host)+':'+str(collection.mongo.port))
+            except pymongo.errors.BulkWriteError as exc:
+                logging.error('pymongo BulkWriteError encountered.')
+                logging.error(exc.details['writeErrors'][0]['errmsg'])
+                return False
         return True
     except FileNotFoundError:
         return False
 
-def save_collection(filename, keys, collection):
-    '''
-    Method which writes status or user collection to CSV file
-    '''
-    # Open file in write mode
-    try:
-        with open(filename, 'w', newline='', encoding="utf-8") as file:
-            # Create csv writer object and write header
-            writer = csv.DictWriter(file, keys.values())
-            writer.writeheader()
-            # For each user/status in collection, replace keys and write to file
-            for _, value in collection.database.items():
-                new_value = {keys[k]:v for k, v in value.__dict__.items()}
-                writer.writerow(new_value)
-        return True
-    except FileNotFoundError:
-        return False
 
 def validate_user_id(user_id):
     '''
@@ -273,6 +233,7 @@ def validate_user_id(user_id):
     except ValueError:
         return True
 
+
 def validate_email(email):
     '''
     Validates email
@@ -284,14 +245,18 @@ def validate_email(email):
         return False
     return True
 
+
 def validate_name(name):
     '''
     Validates user_name
     '''
     # Check if name contains only letters
+    for chars in ['-', "'"]:
+        name = name.replace(chars, '')
     if not name.isalpha():
         return False
     return True
+
 
 def validate_status_id(status_id):
     '''
@@ -312,6 +277,7 @@ def validate_status_id(status_id):
     except ValueError:
         return False
 
+
 def validate_status_text(status_text):
     '''
     Accept any text input
@@ -320,24 +286,26 @@ def validate_status_text(status_text):
         return True
     return False
 
+
 def validate_user_inputs(user_id, email, user_name, user_last_name):
     '''
     Validates all user inputs
     '''
     # Validate inputs
     if not validate_user_id(user_id):
-        print(f'Invalid USER_ID: {user_id}')
+        logging.error('Invalid user_id: %s', user_id)
         return False
     if not validate_email(email):
-        print(f'Invalid EMAIL: {email}')
+        logging.error('Invalid email: %s', email)
         return False
     if not validate_name(user_name):
-        print(f'Invalid NAME: {user_name}')
+        logging.error('Invalid user_name: %s', user_name)
         return False
     if not validate_name(user_last_name):
-        print(f'Invalid LASTNAME: {user_last_name}')
+        logging.error('Invalid user_last_name: %s', user_last_name)
         return False
     return True
+
 
 def validate_status_inputs(status_id, user_id, status_text):
     '''
@@ -345,12 +313,13 @@ def validate_status_inputs(status_id, user_id, status_text):
     '''
     # Validate inputs
     if not validate_status_id(status_id):
-        print(f'Invalid STATUS_ID: {status_id}')
+        logging.error('Invalid status_id: %s', status_id)
         return False
     if not validate_user_id(user_id):
-        print(f'Invalid USER_ID: {user_id}')
+        logging.error('Invalid user_id: %s', user_id)
         return False
     if not validate_status_text(status_text):
-        print(f'Invalid STATUS_TEXT: {status_text}')
+        logging.error('Invalid status_text: %s', status_text)
         return False
     return True
+
