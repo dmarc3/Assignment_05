@@ -49,11 +49,11 @@ class TestMain(unittest.TestCase):
             filename = os.path.join('test_files', 'test_good_accounts.csv')
             main.load_users(filename, user_collection)
             # Test good accounts
-            for x in user_collection.database.find():
-                self.assertIn(x['user_id'], ['evmiles97', 'dave03'])
-                self.assertIn(x['user_email'], ['eve.miles@uw.edu', 'david.yuen@gmail.com'])
-                self.assertIn(x['user_name'], ['Eve', 'David'])
-                self.assertIn(x['user_last_name'], ['Miles', 'Yuen'])
+            for user in user_collection.database.find():
+                self.assertIn(user['user_id'], ['evmiles97', 'dave03'])
+                self.assertIn(user['user_email'], ['eve.miles@uw.edu', 'david.yuen@gmail.com'])
+                self.assertIn(user['user_name'], ['Eve', 'David'])
+                self.assertIn(user['user_last_name'], ['Miles', 'Yuen'])
             # Test bad accounts
             filenames = [os.path.join('test_files', 'test_bad_accounts_1.csv'),
                          os.path.join('test_files', 'test_bad_accounts_2.csv'),
@@ -78,7 +78,9 @@ class TestMain(unittest.TestCase):
             status_collection = main.init_status_collection(mongo, 'TestStatusUpdates')
             # Test good accounts
             for status in status_collection.database.find():
-                self.assertIn(status['status_id'], ['evmiles97_00001', 'dave03_00001', 'evmiles97_00002'])
+                self.assertIn(status['status_id'], ['evmiles97_00001',
+                                                    'dave03_00001',
+                                                    'evmiles97_00002'])
                 self.assertIn(status['user_id'], ['evmiles97', 'dave03'])
                 self.assertIn(status['status_text'], ['Code is finally compiling',
                                                         'Sunny in Seattle this morning',
@@ -101,7 +103,11 @@ class TestMain(unittest.TestCase):
             self.assertFalse(fail)
             email = main.add_user('kwong', 'kwong', 'Kathleen', 'Wong', user_collection)
             self.assertFalse(email)
-            user_id = main.add_user('k wong', 'kwong@gmail.com', 'Kathleen', 'Wong', user_collection)
+            user_id = main.add_user('k wong',
+                                    'kwong@gmail.com',
+                                    'Kathleen',
+                                    'Wong',
+                                    user_collection)
             self.assertFalse(user_id)
             user_name = main.add_user('name', 'kwong@gmail.com', 'kathleen123',
                                       'wong123', user_collection)
@@ -276,8 +282,8 @@ class TestMain(unittest.TestCase):
             inputs = ['evmiles97_00001', status_collection]
             result = main.delete_status(*inputs)
             self.assertTrue(result)
-        self.assertEqual(len(list(status_collection.database.find(dict(status_id='evmiles97_00001')))),
-                         0)
+        query = status_collection.database.find(dict(status_id='evmiles97_00001'))
+        self.assertEqual(len(list(query)), 0)
         # Test add_status function failure
         with sn.MongoDBConnection() as mongo:
             inputs = ['mbakke63_00001', status_collection]

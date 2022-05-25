@@ -7,7 +7,6 @@ import logging
 import pymongo
 import users
 import user_status
-import ipdb
 
 
 def init_user_collection(mongo, name='UserAccounts'):
@@ -322,4 +321,3 @@ def validate_status_inputs(status_id, user_id, status_text):
         logging.error('Invalid status_text: %s', status_text)
         return False
     return True
-

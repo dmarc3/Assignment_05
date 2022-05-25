@@ -76,4 +76,3 @@ class UserCollection:
         else:
             logging.info('User %s not found.', user_id)
         return user
-
