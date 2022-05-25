@@ -12,11 +12,11 @@ class UserCollection:
     Contains a collection of Users objects
     '''
 
-    def __init__(self, mongo):
+    def __init__(self, mongo, name='UserAccounts'):
         logging.info('UserCollection initialized.')
-        self.name = 'UserAccounts'
+        self.name = name
         self.mongo = mongo
-        data_base = self.mongo.connection.media
+        data_base = self.mongo.media
         self.database = data_base[self.name]
         self.database.create_index('user_id', unique=True)
         self.database.create_index('user_email')

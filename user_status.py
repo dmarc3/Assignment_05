@@ -12,11 +12,11 @@ class UserStatusCollection:
     Collection of UserStatus messages
     '''
 
-    def __init__(self, mongo):
+    def __init__(self, mongo, name='StatusUpdates'):
         logging.info('UserStatusCollection initialized.')
-        self.name = 'StatusUpdates'
+        self.name = name
         self.mongo = mongo
-        data_base = self.mongo.connection.media
+        data_base = self.mongo.media
         self.database = data_base[self.name]
         self.database.create_index('status_id', unique=True)
         self.database.create_index('user_id')

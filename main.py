@@ -9,18 +9,18 @@ import users
 import user_status
 
 
-def init_user_collection(mongo):
+def init_user_collection(mongo, name='UserAccounts'):
     '''
     Creates and returns a new instance of UserCollection
     '''
-    return users.UserCollection(mongo)
+    return users.UserCollection(mongo, name)
 
 
-def init_status_collection(mongo):
+def init_status_collection(mongo, name='StatusUpdates'):
     '''
     Creates and returns a new instance of UserStatusCollection
     '''
-    return user_status.UserStatusCollection(mongo)
+    return user_status.UserStatusCollection(mongo, name)
 
 
 def load_users(filename, user_collection):
