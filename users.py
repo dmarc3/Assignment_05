@@ -16,7 +16,7 @@ class UserCollection:
         logging.info('UserCollection initialized.')
         self.name = name
         self.mongo = mongo
-        data_base = self.mongo.media
+        data_base = self.mongo.connection.media
         self.database = data_base[self.name]
         self.database.create_index('user_id', unique=True)
         self.database.create_index('user_email')

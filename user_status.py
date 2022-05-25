@@ -15,7 +15,7 @@ class UserStatusCollection:
         logging.info('UserStatusCollection initialized.')
         self.name = name
         self.mongo = mongo
-        data_base = self.mongo.media
+        data_base = self.mongo.connection.media
         self.database = data_base[self.name]
         self.database.create_index('status_id', unique=True)
         self.database.create_index('user_id')
