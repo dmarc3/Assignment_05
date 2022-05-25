@@ -52,9 +52,8 @@ class UserStatusCollection:
                          user_id,
                          status_text)
             return True
-        else:
-            logging.error('Unable to modify %s. Status does not exist.', status_id)
-            return False
+        logging.error('Unable to modify %s. Status does not exist.', status_id)
+        return False
 
     def delete_status(self, status_id):
         '''
@@ -64,9 +63,8 @@ class UserStatusCollection:
         if result.raw_result['n'] == 1:
             logging.info('Deleted status %s.', status_id)
             return True
-        else:
-            logging.error('Unable to delete %s. Status does not exist.', status_id)
-            return False
+        logging.error('Unable to delete %s. Status does not exist.', status_id)
+        return False
 
     def search_status(self, status_id):
         '''
